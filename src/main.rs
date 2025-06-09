@@ -1,18 +1,16 @@
 use std::{env, net::{Ipv4Addr, Ipv6Addr}};
 
-use libp2p::{futures::StreamExt, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr};
+use libp2p::{futures::StreamExt, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr, Swarm};
 use tracing::{error, info};
 mod node;
 
 fn get_listen_addrs() -> Vec<String> {
-    // Read port from env or default to 8080
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
 
     vec![
-        format!("/ip4/0.0.0.0/tcp/{}/ws", port),
-        format!("/ip6/::/tcp/{}/ws", port),
-        format!("/ip4/0.0.0.0/tcp/{}", port),
-        format!("/ip6/::/tcp/{}", port),
+        format!("/ip4/0.0.0.0/tcp/3000/ws"),
+        format!("/ip6/::/tcp/3000/ws"),
+        format!("/ip4/0.0.0.0/tcp/3000"),
+        format!("/ip6/::/tcp/3000"),
     ]
 }
 
@@ -30,25 +28,15 @@ async fn main() {
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
 
-    let listen_addr_tcp = Multiaddr::empty()
-    .with(Protocol::from(Ipv4Addr::UNSPECIFIED))
-    .with(Protocol::Tcp(3000));
-
-    swarm.listen_on(listen_addr_tcp.clone()).map_err(|e| {
-        let err = format!("Error listening on {listen_addr_tcp:?}: {e:?}");
-        error!("{err}");
-        err
-    }).unwrap();
-
-    // for addr in get_listen_addrs() {
-    //     let addr : Multiaddr = addr.parse().unwrap();
-    //     swarm.listen_on(addr.clone()).map_err(|e| {
-    //         let err = format!("Error listening on {addr:?}: {e:?}");
-    //         error!("{err}");
-    //         err
-    //     }).unwrap();
-    //     // println!("Listening on {addr:?}");
-    // }
+    for addr in get_listen_addrs() {
+        let addr : Multiaddr = addr.parse().unwrap();
+        swarm.listen_on(addr.clone()).map_err(|e| {
+            let err = format!("Error listening on {addr:?}: {e:?}");
+            error!("{err}");
+            err
+        }).unwrap();
+        // println!("Listening on {addr:?}");
+    }
 
     println!("Peer Id: {:?}", swarm.local_peer_id());
 
