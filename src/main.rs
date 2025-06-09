@@ -1,13 +1,20 @@
+use std::env;
+
 use libp2p::{futures::StreamExt, relay::Event, swarm::SwarmEvent, Multiaddr};
 use tracing::{error, info};
 mod node;
 
-const listen_addr_list : &[&str] = &[
-    "/ip4/0.0.0.0/tcp/8080/ws",      // WebSocket HTTP
-    "/ip6/::/tcp/8080/ws",           // WebSocket IPv6 HTTP
-    "/ip4/0.0.0.0/tcp/8080",
-    "/ip6/::/tcp/8080",
-];
+fn get_listen_addrs() -> Vec<String> {
+    // Read port from env or default to 8080
+    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+
+    vec![
+        format!("/ip4/0.0.0.0/tcp/{}/ws", port),
+        format!("/ip6/::/tcp/{}/ws", port),
+        format!("/ip4/0.0.0.0/tcp/{}", port),
+        format!("/ip6/::/tcp/{}", port),
+    ]
+}
 
 #[tokio::main]
 async fn main() {
@@ -23,7 +30,7 @@ async fn main() {
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
 
-    for addr in listen_addr_list {
+    for addr in get_listen_addrs() {
         let addr : Multiaddr = addr.parse().unwrap();
         swarm.listen_on(addr.clone()).map_err(|e| {
             let err = format!("Error listening on {addr:?}: {e:?}");
