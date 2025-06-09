@@ -24,8 +24,8 @@ jobs:
 
     - name: Build and Push
       run: |
-        docker build -t $DOCKER_IMAGE:${{ inputs.tag || github.sha }} .
-        docker push $DOCKER_IMAGE:${{ inputs.tag || github.sha }}
+        docker build -t zedonboy/relay:${{ github.sha }} .
+        docker push zedonboy/relay:${{ github.sha }}
 
     - name: Deploy to Droplet
       uses: appleboy/ssh-action@v0.1.4
@@ -38,14 +38,14 @@ jobs:
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
           
           # Pull and run the new image
-          docker pull $DOCKER_IMAGE:${{ inputs.tag || github.sha }}
+          docker pull zedonboy/relay:${{ github.sha }}
           docker stop app-container || true
           docker rm app-container || true
           docker run -d \
             --name app-container \
             -p 3000:3000 \
             --restart unless-stopped \
-            $DOCKER_IMAGE:${{ inputs.tag || github.sha }}
+            zedonboy/relay:${{ github.sha }}
           
           # Cleanup old images
           docker image prune -af
