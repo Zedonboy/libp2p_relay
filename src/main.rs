@@ -3,10 +3,10 @@ use tracing::{error, info};
 mod node;
 
 const listen_addr_list : &[&str] = &[
-    "/ip4/0.0.0.0/tcp/3000/ws",      // WebSocket HTTP
-    "/ip6/::/tcp/3000/ws",           // WebSocket IPv6 HTTP
-    "/ip4/0.0.0.0/tcp/3000",
-    "/ip6/::/tcp/3000",
+    "/ip4/0.0.0.0/tcp/0/ws",      // WebSocket HTTP
+    "/ip6/::/tcp/0/ws",           // WebSocket IPv6 HTTP
+    "/ip4/0.0.0.0/tcp/0",
+    "/ip6/::/tcp/0",
 ];
 
 #[tokio::main]
