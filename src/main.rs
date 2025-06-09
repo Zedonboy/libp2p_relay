@@ -1,6 +1,6 @@
-use std::env;
+use std::{env, net::Ipv6Addr};
 
-use libp2p::{futures::StreamExt, relay::Event, swarm::SwarmEvent, Multiaddr};
+use libp2p::{futures::StreamExt, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr};
 use tracing::{error, info};
 mod node;
 
@@ -30,15 +30,25 @@ async fn main() {
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
 
-    for addr in get_listen_addrs() {
-        let addr : Multiaddr = addr.parse().unwrap();
-        swarm.listen_on(addr.clone()).map_err(|e| {
-            let err = format!("Error listening on {addr:?}: {e:?}");
-            error!("{err}");
-            err
-        }).unwrap();
-        // println!("Listening on {addr:?}");
-    }
+    let listen_addr_tcp = Multiaddr::empty()
+    .with(Protocol::from(Ipv6Addr::UNSPECIFIED))
+    .with(Protocol::Tcp(3000));
+
+    swarm.listen_on(listen_addr_tcp.clone()).map_err(|e| {
+        let err = format!("Error listening on {listen_addr_tcp:?}: {e:?}");
+        error!("{err}");
+        err
+    }).unwrap();
+
+    // for addr in get_listen_addrs() {
+    //     let addr : Multiaddr = addr.parse().unwrap();
+    //     swarm.listen_on(addr.clone()).map_err(|e| {
+    //         let err = format!("Error listening on {addr:?}: {e:?}");
+    //         error!("{err}");
+    //         err
+    //     }).unwrap();
+    //     // println!("Listening on {addr:?}");
+    // }
 
     println!("Peer Id: {:?}", swarm.local_peer_id());
 
