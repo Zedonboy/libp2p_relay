@@ -1,5 +1,5 @@
-use libp2p::{futures::StreamExt, relay::Event, swarm::SwarmEvent};
-use tracing::info;
+use libp2p::{futures::StreamExt, relay::Event, swarm::SwarmEvent, Multiaddr};
+use tracing::{error, info};
 mod node;
 
 const listen_addr_list : &[&str] = &[
@@ -22,6 +22,16 @@ async fn main() {
 
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
+
+    for addr in listen_addr_list {
+        let addr : Multiaddr = addr.parse().unwrap();
+        swarm.listen_on(addr.clone()).map_err(|e| {
+            let err = format!("Error listening on {addr:?}: {e:?}");
+            error!("{err}");
+            err
+        }).unwrap();
+        // println!("Listening on {addr:?}");
+    }
 
     println!("Peer Id: {:?}", swarm.local_peer_id());
 
