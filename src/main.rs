@@ -52,7 +52,7 @@ async fn main() {
 
     println!("Peer Id: {:?}", swarm.local_peer_id());
 
-    // println!("Multiaddrs: {:?}", swarm.external_addresses().collect::<Vec<_>>());
+    println!("Multiaddrs: {:?}", swarm.external_addresses().collect::<Vec<_>>());
 
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
