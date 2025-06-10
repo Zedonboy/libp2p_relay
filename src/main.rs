@@ -42,6 +42,8 @@ async fn main() {
 
     println!("Multiaddrs: {:?}", swarm.external_addresses().collect::<Vec<_>>());
 
+    println!("Network Info: {:?}", swarm.network_info());
+
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
             SwarmEvent::Behaviour(event) => {
@@ -67,7 +69,8 @@ async fn main() {
                 }
             }
             SwarmEvent::NewListenAddr { address, .. } => {
-                println!("Listening on {address:?}");
+                let addr = address.with_p2p(swarm.local_peer_id().clone()).unwrap();
+                println!("Listening on {addr:?}");
             }
             _ => {}
         }
