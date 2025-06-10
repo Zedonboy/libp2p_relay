@@ -1,7 +1,9 @@
 use std::{env, net::{Ipv4Addr, Ipv6Addr}};
 
-use libp2p::{futures::StreamExt, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr, Swarm};
+use libp2p::{futures::StreamExt, identify, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr, Swarm};
 use tracing::{error, info};
+
+use crate::node::NodeBehaviourEvent;
 mod node;
 
 fn get_listen_addrs() -> Vec<String> {
@@ -47,22 +49,26 @@ async fn main() {
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
             SwarmEvent::Behaviour(event) => {
+                info!("Behaviour Event: {event:?}");
                 match event {
-                    Event::CircuitClosed { src_peer_id, dst_peer_id, error } => {
-                        info!("Circuit closed: {src_peer_id} -> {dst_peer_id} with error: {error:?}");
+                   NodeBehaviourEvent::Relay(event) => {
+
+                   }
+                   NodeBehaviourEvent::Identify(id_event) => {
+
+                    if let identify::Event::Received { info: identify::Info { listen_addrs, observed_addr, .. }, .. } = id_event {
+                        info!("Received identify message from Observed Address: {observed_addr:?}");
+                        swarm.add_external_address(observed_addr.clone());
+
+                        // for listen_addr in listen_addrs {
+                        //     swarm.add_external_address(listen_addr.clone());
+                        // }
                     }
 
-                    Event::CircuitReqAccepted { src_peer_id, dst_peer_id } => {
-                        info!("Circuit request accepted: {src_peer_id} -> {dst_peer_id}");
-                    }
+                   }
+                   NodeBehaviourEvent::Ping(event) => {
 
-                    Event::ReservationReqAccepted { src_peer_id, renewed } => {
-                        info!("Reservation request accepted: {src_peer_id} -> {renewed}");
-                    }
-
-                    Event::ReservationReqDenied { src_peer_id } => {
-                        info!("Reservation request denied: {src_peer_id}");
-                    }
+                   }
                     _ => {
                         info!("Event: {event:?}");
                     }
