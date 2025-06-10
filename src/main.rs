@@ -72,6 +72,15 @@ async fn main() {
                 let addr = address.with_p2p(swarm.local_peer_id().clone()).unwrap();
                 println!("Listening on {addr:?}");
             }
+
+            SwarmEvent::IncomingConnection { connection_id, local_addr, send_back_addr } => {
+                info!("Incoming connection: {connection_id} -> {local_addr} -> {send_back_addr}");
+            }
+
+            SwarmEvent::ConnectionEstablished { peer_id, connection_id, endpoint, num_established, concurrent_dial_errors, established_in } => {
+                info!("Connection established: {peer_id} -> {connection_id} -> {endpoint:?} -> {num_established} -> {concurrent_dial_errors:?} -> {established_in:?}");
+            }
+
             _ => {}
         }
     }
