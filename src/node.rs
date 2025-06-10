@@ -17,12 +17,6 @@ use libp2p::{identify, noise, ping::{self, Config}, relay::{self, Behaviour}, sw
 pub async fn create_swarm() -> Result<Swarm<NodeBehaviour>, Box<dyn std::error::Error>> {
     let swarm = SwarmBuilder::with_new_identity()
     .with_tokio()
-    .with_tcp(
-        tcp::Config::default(),
-        (libp2p::tls::Config::new, noise::Config::new),
-        yamux::Config::default,
-    )?
-    .with_dns()?
     .with_websocket(
         (libp2p::tls::Config::new, libp2p::noise::Config::new),
         libp2p::yamux::Config::default,

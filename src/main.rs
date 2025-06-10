@@ -10,9 +10,9 @@ fn get_listen_addrs() -> Vec<String> {
 
     vec![
         format!("/ip4/0.0.0.0/tcp/3000/ws"),
-        format!("/ip6/::/tcp/3000/ws"),
-        format!("/ip4/0.0.0.0/tcp/3000"),
-        format!("/ip6/::/tcp/3000"),
+        // format!("/ip6/::/tcp/3000/ws"),
+        // format!("/ip4/0.0.0.0/tcp/3000"),
+        // format!("/ip6/::/tcp/3000"),
     ]
 }
 
