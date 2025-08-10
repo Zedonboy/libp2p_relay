@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use libp2p::{identify, noise, ping::{self, Config}, relay::{self, Behaviour}, swarm::NetworkBehaviour, tcp, yamux, Swarm, SwarmBuilder, Transport};
+use libp2p::{identify, ping::{self, Config}, relay, swarm::NetworkBehaviour, Swarm, SwarmBuilder};
 
 pub async fn create_swarm() -> Result<Swarm<NodeBehaviour>, Box<dyn std::error::Error>> {
     let swarm = SwarmBuilder::with_new_identity()

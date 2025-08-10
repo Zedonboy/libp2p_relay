@@ -1,10 +1,15 @@
-use std::{env, net::{Ipv4Addr, Ipv6Addr}};
+use std::sync::Arc;
 
-use libp2p::{futures::StreamExt, identify, multiaddr::Protocol, relay::Event, swarm::SwarmEvent, Multiaddr, Swarm};
+use libp2p::{futures::StreamExt, identify, relay::Event, swarm::SwarmEvent, Multiaddr};
 use tracing::{error, info};
 
 use crate::node::NodeBehaviourEvent;
+use crate::metrics::MetricsCollector;
+use crate::webserver::create_router;
+
 mod node;
+mod metrics;
+mod webserver;
 
 fn get_listen_addrs() -> Vec<String> {
 
@@ -29,6 +34,18 @@ async fn main() {
 
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
+    
+    // Initialize metrics collector
+    let metrics = Arc::new(MetricsCollector::new());
+    
+    // Start web server in background
+    let web_metrics = metrics.clone();
+    tokio::spawn(async move {
+        let app = create_router(web_metrics);
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+        info!("Web server listening on http://0.0.0.0:8080");
+        axum::serve(listener, app).await.unwrap();
+    });
 
     for addr in get_listen_addrs() {
         let addr : Multiaddr = addr.parse().unwrap();
@@ -51,12 +68,23 @@ async fn main() {
             SwarmEvent::Behaviour(event) => {
                 info!("Behaviour Event: {event:?}");
                 match event {
-                   NodeBehaviourEvent::Relay(event) => {
-
+                   NodeBehaviourEvent::Relay(relay_event) => {
+                       info!("Relay event: {relay_event:?}");
+                       match relay_event {
+                           Event::ReservationReqAccepted { src_peer_id, renewed, .. } => {
+                               info!("Relay reservation accepted from {src_peer_id}, renewed: {renewed}");
+                               metrics.connection_established(src_peer_id);
+                           }
+                           Event::CircuitReqAccepted { src_peer_id, dst_peer_id, .. } => {
+                               info!("Circuit established: {src_peer_id} <-> {dst_peer_id}");
+                               metrics.message_relayed(&src_peer_id);
+                           }
+                           _ => {}
+                       }
                    }
                    NodeBehaviourEvent::Identify(id_event) => {
 
-                    if let identify::Event::Received { info: identify::Info { listen_addrs, observed_addr, .. }, .. } = id_event {
+                    if let identify::Event::Received { info: identify::Info { listen_addrs: _, observed_addr, .. }, .. } = id_event {
                         info!("Received identify message from Observed Address: {observed_addr:?}");
                         swarm.add_external_address(observed_addr.clone());
 
@@ -66,17 +94,15 @@ async fn main() {
                     }
 
                    }
-                   NodeBehaviourEvent::Ping(event) => {
+                   NodeBehaviourEvent::Ping(_event) => {
 
                    }
-                    _ => {
-                        info!("Event: {event:?}");
-                    }
                 }
             }
             SwarmEvent::NewListenAddr { address, .. } => {
                 let addr = address.with_p2p(swarm.local_peer_id().clone()).unwrap();
                 println!("Listening on {addr:?}");
+                metrics.add_relay_address(addr.to_string());
             }
 
             SwarmEvent::IncomingConnection { connection_id, local_addr, send_back_addr } => {
@@ -85,6 +111,14 @@ async fn main() {
 
             SwarmEvent::ConnectionEstablished { peer_id, connection_id, endpoint, num_established, concurrent_dial_errors, established_in } => {
                 info!("Connection established: {peer_id} -> {connection_id} -> {endpoint:?} -> {num_established} -> {concurrent_dial_errors:?} -> {established_in:?}");
+                metrics.connection_established(peer_id);
+            }
+
+            SwarmEvent::ConnectionClosed { peer_id, connection_id, endpoint, num_established, cause } => {
+                info!("Connection closed: {peer_id} -> {connection_id} -> {endpoint:?} -> {num_established} -> {cause:?}");
+                if num_established == 0 {
+                    metrics.connection_closed(&peer_id);
+                }
             }
 
             _ => {}
