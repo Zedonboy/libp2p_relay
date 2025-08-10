@@ -44,6 +44,7 @@ jobs:
           docker run -d \
             --name app-container \
             -p 3000:3000 \
+            -p 80:80 \
             --restart unless-stopped \
             zedonboy/relay:${{ github.sha }}
           
