@@ -42,8 +42,8 @@ async fn main() {
     let web_metrics = metrics.clone();
     tokio::spawn(async move {
         let app = create_router(web_metrics);
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-        info!("Web server listening on http://0.0.0.0:8080");
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
+        info!("Web server listening on http://0.0.0.0:80");
         axum::serve(listener, app).await.unwrap();
     });
 
