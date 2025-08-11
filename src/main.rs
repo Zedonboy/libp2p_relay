@@ -15,7 +15,7 @@ fn get_listen_addrs() -> Vec<String> {
 
     vec![
         format!("/ip4/0.0.0.0/tcp/3000/ws"),
-        // format!("/ip6/::/tcp/3000/ws"),
+        format!("/ip6/::/tcp/3000/ws"),
         // format!("/ip4/0.0.0.0/tcp/3000"),
         // format!("/ip6/::/tcp/3000"),
     ]
@@ -35,8 +35,9 @@ async fn main() {
     info!("Starting proxy server...");
     let mut swarm = node::create_swarm().await.expect("Failed to create swarm");
     
-    // Initialize metrics collector
-    let metrics = Arc::new(MetricsCollector::new());
+    // Initialize metrics collector with peer ID
+    let peer_id = swarm.local_peer_id().to_string();
+    let metrics = Arc::new(MetricsCollector::new(peer_id));
     
     // Start web server in background
     let web_metrics = metrics.clone();

@@ -19,6 +19,7 @@ pub fn create_router(metrics: Arc<MetricsCollector>) -> Router {
     Router::new()
         .route("/", get(homepage))
         .route("/api/metrics", get(metrics_json))
+        .route("/api/peerid", get(peer_id_json))
         .with_state(Arc::new(state))
         .layer(ServiceBuilder::new())
 }
@@ -209,6 +210,11 @@ async fn homepage(State(state): State<Arc<AppState>>) -> Html<String> {
 async fn metrics_json(State(state): State<Arc<AppState>>) -> Json<RelayMetrics> {
     let metrics = state.metrics.get_metrics();
     Json(metrics)
+}
+
+async fn peer_id_json(State(state): State<Arc<AppState>>) -> Json<String> {
+    let peer_id = state.metrics.get_peer_id();
+    Json(peer_id)
 }
 
 fn format_bytes(bytes: u64) -> String {

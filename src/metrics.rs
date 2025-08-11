@@ -30,15 +30,17 @@ pub struct MetricsCollector {
     start_time: DateTime<Utc>,
     total_connections: Arc<Mutex<u64>>,
     relay_addresses: Arc<Mutex<Vec<String>>>,
+    peer_id: String,
 }
 
 impl MetricsCollector {
-    pub fn new() -> Self {
+    pub fn new(peer_id: String) -> Self {
         Self {
             connections: Arc::new(Mutex::new(HashMap::new())),
             start_time: Utc::now(),
             total_connections: Arc::new(Mutex::new(0)),
             relay_addresses: Arc::new(Mutex::new(Vec::new())),
+            peer_id,
         }
     }
 
@@ -48,6 +50,10 @@ impl MetricsCollector {
                 addrs.push(address);
             }
         }
+    }
+
+    pub fn get_peer_id(&self) -> String {
+        self.peer_id.clone()
     }
 
     pub fn connection_established(&self, peer_id: PeerId) {
