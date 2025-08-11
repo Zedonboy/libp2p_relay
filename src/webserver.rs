@@ -6,6 +6,7 @@ use axum::{
 };
 use std::sync::Arc;
 use tower::ServiceBuilder;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::metrics::{MetricsCollector, RelayMetrics};
 
@@ -21,7 +22,14 @@ pub fn create_router(metrics: Arc<MetricsCollector>) -> Router {
         .route("/api/metrics", get(metrics_json))
         .route("/api/peerid", get(peer_id_json))
         .with_state(Arc::new(state))
-        .layer(ServiceBuilder::new())
+        .layer(
+            ServiceBuilder::new().layer(
+                CorsLayer::new()
+                    .allow_origin(Any)
+                    .allow_methods(Any)
+                    .allow_headers(Any)
+            )
+        )
 }
 
 async fn homepage(State(state): State<Arc<AppState>>) -> Html<String> {
