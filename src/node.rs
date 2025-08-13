@@ -25,13 +25,10 @@ pub async fn create_swarm() -> Result<Swarm<NodeBehaviour>, Box<dyn std::error::
     ).await?
     .with_behaviour(|key| NodeBehaviour {
         relay: relay::Behaviour::new(key.public().to_peer_id(), libp2p::relay::Config::default()),
-        ping: ping::Behaviour::new(Config::default()),
+        ping: ping::Behaviour::new(Config::new()),
         identify: identify::Behaviour::new(libp2p::identify::Config::new(
             "/fusion/1.0.0".to_string(), key.public())),
     })?
-    .with_swarm_config(|config| {
-        config.with_idle_connection_timeout(Duration::from_secs(300))
-    })
     .build();
 
     Ok(swarm)
