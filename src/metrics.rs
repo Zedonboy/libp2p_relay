@@ -27,8 +27,8 @@ pub struct RelayMetrics {
 #[derive(Debug, Clone)]
 pub struct MetricsCollector {
     connections: Arc<Mutex<HashMap<PeerId, ConnectionMetrics>>>,
+    connection_history: Arc<Mutex<Vec<DateTime<Utc>>>>,
     start_time: DateTime<Utc>,
-    total_connections: Arc<Mutex<u64>>,
     relay_addresses: Arc<Mutex<Vec<String>>>,
     peer_id: String,
 }
@@ -37,8 +37,8 @@ impl MetricsCollector {
     pub fn new(peer_id: String) -> Self {
         Self {
             connections: Arc::new(Mutex::new(HashMap::new())),
+            connection_history: Arc::new(Mutex::new(Vec::new())),
             start_time: Utc::now(),
-            total_connections: Arc::new(Mutex::new(0)),
             relay_addresses: Arc::new(Mutex::new(Vec::new())),
             peer_id,
         }
@@ -57,17 +57,18 @@ impl MetricsCollector {
     }
 
     pub fn connection_established(&self, peer_id: PeerId) {
+        let now = Utc::now();
         if let Ok(mut connections) = self.connections.lock() {
             connections.insert(peer_id, ConnectionMetrics {
                 peer_id: peer_id.to_string(),
-                connected_at: Utc::now(),
+                connected_at: now,
                 bytes_sent: 0,
                 bytes_received: 0,
                 messages_relayed: 0,
             });
         }
-        if let Ok(mut total) = self.total_connections.lock() {
-            *total += 1;
+        if let Ok(mut history) = self.connection_history.lock() {
+            history.push(now);
         }
     }
 
@@ -99,8 +100,13 @@ impl MetricsCollector {
         let twenty_four_hours_ago = now - Duration::hours(24);
         
         let connections = self.connections.lock().unwrap();
-        let total_connections = *self.total_connections.lock().unwrap();
+        let connection_history = self.connection_history.lock().unwrap();
         let relay_addresses = self.relay_addresses.lock().unwrap().clone();
+        
+        // Filter connection history to only include connections from last 24 hours
+        let total_connections = connection_history.iter()
+            .filter(|&timestamp| *timestamp >= twenty_four_hours_ago)
+            .count() as u64;
         
         let active_connections = connections.len() as u64;
         

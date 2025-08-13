@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::time::Duration;
+
 use libp2p::{identify, ping::{self, Config}, relay, swarm::NetworkBehaviour, Swarm, SwarmBuilder};
 
 pub async fn create_swarm() -> Result<Swarm<NodeBehaviour>, Box<dyn std::error::Error>> {
@@ -27,6 +29,9 @@ pub async fn create_swarm() -> Result<Swarm<NodeBehaviour>, Box<dyn std::error::
         identify: identify::Behaviour::new(libp2p::identify::Config::new(
             "/fusion/1.0.0".to_string(), key.public())),
     })?
+    .with_swarm_config(|config| {
+        config.with_idle_connection_timeout(Duration::from_secs(300))
+    })
     .build();
 
     Ok(swarm)
